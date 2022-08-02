@@ -22,12 +22,25 @@ namespace NerdStore.Catalogo.Data
                 e => e.GetProperties().Where(p => p.ClrType == typeof(string))))
                 property.GetRelationalTypeMapping().Equals("varchar(100)");
 
-            base.OnModelCreating(modelBuilder);
+           modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogoContext).Assembly);
         }
 
-        public Task<bool> Commit()
+        public async Task<bool> Commit()
         {
-            throw new NotImplementedException();
+            foreach (var entity in ChangeTracker.Entries().Where(e => e.Entity.GetType().GetProperty("DataCadastro") != null))
+            {
+                if(entity.State == EntityState.Added)
+                {
+                    entity.Property("DataCadastro").CurrentValue = DateTime.Now;
+                }
+
+                if (entity.State == EntityState.Modified)
+                {
+                    entity.Property("DataCadastro").IsModified = false;
+                }
+            }
+
+            return await base.SaveChangesAsync() > 0;
         }
     }
 }
